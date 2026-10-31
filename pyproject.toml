@@ -1,0 +1,17 @@
+[project]
+name = "tinyjobs"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "ksredkin",email = "ksredkin0968@gmail.com"}
+]
+requires-python = ">=3.14"
+dependencies = [
+    "sqlalchemy[asyncio] (>=2.1.6,<3.0.0)",
+    "aiosqlite (>=0.20.0,<1.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
