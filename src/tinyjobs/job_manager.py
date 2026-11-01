@@ -47,6 +47,8 @@ class JobManager:
         ]
 
     async def add(self, async_function: function, async_function_kwargs: dict[str, Any] = {}, retries: int = 1, ctx_mode: bool = False) -> int:
+        await self._initialization_task
+
         async with self.database.get_async_session() as session:
             job_rep = JobRepository(session)
             job_model = await job_rep.create(func=f"{async_function.__module__}:{async_function.__name__}", func_kwargs=async_function_kwargs, retries=retries, ctx_mode=ctx_mode)

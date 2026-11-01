@@ -1,6 +1,6 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import Enum, JSON, ForeignKey
-from ..enums import JobStatus
+from ..enums import JobStatus, StepStatus
 from sqlalchemy.ext.mutable import MutableDict
 
 class Base(DeclarativeBase):
@@ -26,6 +26,7 @@ class Step(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"))
     name: Mapped[str]
-    result: Mapped[dict|None] = mapped_column(MutableDict.as_mutable(JSON), nullable=True, default=None)
+    status: Mapped[StepStatus] = mapped_column(Enum(StepStatus, name="step_status", values_callable=lambda enum: [item.value for item in enum]), default=StepStatus.PENDING, nullable=False)
+    result: Mapped[str|None]
 
     job: Mapped["Job"] = relationship(back_populates="steps")
