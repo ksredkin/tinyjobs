@@ -1,32 +1,51 @@
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import Enum, JSON, ForeignKey
-from ..enums import JobStatus, StepStatus
+from sqlalchemy import JSON, Enum, ForeignKey
 from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+from ..enums import JobStatus, StepStatus
+
 
 class Base(DeclarativeBase):
     pass
 
+
 class Job(Base):
     __tablename__ = "jobs"
-    
+
     id: Mapped[int] = mapped_column(primary_key=True)
     func: Mapped[str]
     func_kwargs: Mapped[dict] = mapped_column(MutableDict.as_mutable(JSON))
-    status: Mapped[JobStatus] = mapped_column(Enum(JobStatus, name="job_status", values_callable=lambda enum: [item.value for item in enum]), default=JobStatus.PENDING, nullable=False)
+    status: Mapped[JobStatus] = mapped_column(
+        Enum(
+            JobStatus,
+            name="job_status",
+            values_callable=lambda enum: [item.value for item in enum],
+        ),
+        default=JobStatus.PENDING,
+        nullable=False,
+    )
     retries: Mapped[int]
     retries_left: Mapped[int]
     ctx_mode: Mapped[bool]
 
-    steps: Mapped[list["Step"]] = relationship(back_populates="job")
+    steps: Mapped[list[Step]] = relationship(back_populates="job")
 
 
 class Step(Base):
     __tablename__ = "steps"
-    
+
     id: Mapped[int] = mapped_column(primary_key=True)
     job_id: Mapped[int] = mapped_column(ForeignKey("jobs.id"))
     name: Mapped[str]
-    status: Mapped[StepStatus] = mapped_column(Enum(StepStatus, name="step_status", values_callable=lambda enum: [item.value for item in enum]), default=StepStatus.PENDING, nullable=False)
-    result: Mapped[str|None]
+    status: Mapped[StepStatus] = mapped_column(
+        Enum(
+            StepStatus,
+            name="step_status",
+            values_callable=lambda enum: [item.value for item in enum],
+        ),
+        default=StepStatus.PENDING,
+        nullable=False,
+    )
+    result: Mapped[str | None]
 
-    job: Mapped["Job"] = relationship(back_populates="steps")
+    job: Mapped[Job] = relationship(back_populates="steps")

@@ -1,11 +1,13 @@
 from enum import StrEnum
 
+
 class JobStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
+
 
 class StepStatus(StrEnum):
     PENDING = "pending"

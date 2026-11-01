@@ -1,16 +1,19 @@
-from .connection import get_session, get_engine
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, AsyncEngine
-from typing import AsyncGenerator
-from .models import Base
-from ..logger import get_logger
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
+
+from ..logger import get_logger
+from .connection import get_engine, get_session
+from .models import Base
+
 logger = get_logger("Database")
+
 
 class Database:
     _instance = None
 
-    def __new__(cls, namespace: str|None = None) -> "Database":
+    def __new__(cls, namespace: str = "main") -> Database:
         if not cls._instance:
             cls._instance = super().__new__(cls)
             cls._instance.engine = get_engine(namespace)
@@ -18,7 +21,7 @@ class Database:
         return cls._instance
 
     @asynccontextmanager
-    async def get_async_session(self) -> AsyncGenerator[AsyncSession, None]:
+    async def get_async_session(self) -> AsyncGenerator[AsyncSession]:
         self.sessionmaker: async_sessionmaker[AsyncSession]
         async with self.sessionmaker() as session:
             try:
