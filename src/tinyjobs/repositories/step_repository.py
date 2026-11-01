@@ -17,7 +17,7 @@ class StepRepository:
         result = await self.session.execute(select(Step).where(Step.job_id == job_id))
         return [step for step in result.scalars().all()]
 
-    async def get_by_name_and_job(self, job_id: int, name: str) -> Step | None:
+    async def get_by_job_and_name(self, job_id: int, name: str) -> Step | None:
         result = await self.session.execute(
             select(Step).where(Step.job_id == job_id, Step.name == name)
         )

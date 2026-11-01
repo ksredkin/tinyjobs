@@ -1,9 +1,9 @@
 import asyncio
-import importlib
 from typing import Any, Callable
 
 from .database.database import Database
-from .repositories.job_repository import JobRepository
+from .services.job_service import JobService
+from .services.step_service import StepService
 from .worker import Job, Worker
 
 
@@ -12,47 +12,30 @@ class JobManager:
         self.jobs: asyncio.Queue[Job] = asyncio.Queue()
         self.jobs_by_id: dict[int, Job] = {}
 
-        self.workers: list[Worker] = [Worker() for _ in range(workers)]
-
         self.database = Database(namespace)
+        self.job_service = JobService(self.database)
+        self.step_service = StepService(self.database)
+
+        self.workers: list[Worker] = [
+            Worker(self.job_service, self.step_service) for _ in range(workers)
+        ]
+
         self._worker_tasks: list[asyncio.Task[None]] = []
 
         loop = asyncio.get_running_loop()
         self._initialization_task = loop.create_task(self.database.init_db())
         loop.create_task(self._start_workers())
 
-    def find_function(self, function: str) -> Callable[..., Any]:
-        module_name, func_name = function.split(":")
-
-        module = importlib.import_module(module_name)
-
-        func_obj = getattr(module, func_name)
-        return func_obj
-
-    async def get_active_jobs(self) -> list[Job]:
-        async with self.database.get_async_session() as session:
-            job_repo = JobRepository(session)
-            db_jobs = await job_repo.get_active()
-        return [
-            Job(
-                id=db_job.id,
-                async_function=self.find_function(db_job.func),
-                async_function_kwargs=db_job.func_kwargs,
-                status=db_job.status,
-                retries=db_job.retries,
-                retries_left=db_job.retries_left,
-                ctx_mode=db_job.ctx_mode,
-            )
-            for db_job in db_jobs
-        ]
+    async def _enqueue_job(self, job: Job) -> None:
+        self.jobs_by_id[job.id] = job
+        await self.jobs.put(job)
 
     async def _start_workers(self) -> None:
         await self._initialization_task
 
-        active_jobs = await self.get_active_jobs()
+        active_jobs = await self.job_service.get_active()
         for job in active_jobs:
-            await self.jobs.put(job)
-            self.jobs_by_id[job.id] = job
+            await self._enqueue_job(job)
 
         self._worker_tasks = [
             asyncio.create_task(worker.process_jobs(self.jobs))
@@ -67,29 +50,10 @@ class JobManager:
         ctx_mode: bool = False,
     ) -> int:
         await self._initialization_task
-
-        async with self.database.get_async_session() as session:
-            job_rep = JobRepository(session)
-            job_model = await job_rep.create(
-                func=f"{async_function.__module__}:{async_function.__name__}",
-                func_kwargs=async_function_kwargs,
-                retries=retries,
-                ctx_mode=ctx_mode,
-            )
-
-        job = Job(
-            id=job_model.id,
-            async_function=async_function,
-            async_function_kwargs=async_function_kwargs,
-            status=job_model.status,
-            retries=retries,
-            retries_left=0,
-            ctx_mode=ctx_mode,
+        job = await self.job_service.create(
+            async_function, async_function_kwargs, retries, ctx_mode
         )
-
-        self.jobs_by_id[job.id] = job
-        await self.jobs.put(job)
-
+        await self._enqueue_job(job)
         return job.id
 
     async def get(self, job_id: int) -> Job | None:
