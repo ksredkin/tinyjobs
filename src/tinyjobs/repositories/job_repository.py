@@ -47,3 +47,14 @@ class JobRepository:
             job.status = new_status
 
         return job
+
+    async def add_retry_left_by_id(
+            self, job_id: int
+        ) -> Job | None:
+            job = await self.session.get(Job, job_id)
+    
+            if not job:
+                return None
+    
+            job.retries_left += 1
+            return job

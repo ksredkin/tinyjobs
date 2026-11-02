@@ -74,3 +74,8 @@ class JobService:
         async with self.database.get_async_session() as session:
             job_repo = JobRepository(session)
             await job_repo.update_by_id(job_id, new_status)
+
+    async def add_retry_left(self, job_id: int) -> None:
+        async with self.database.get_async_session() as session:
+            job_repo = JobRepository(session)
+            await job_repo.add_retry_left_by_id(job_id)

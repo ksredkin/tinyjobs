@@ -37,3 +37,5 @@ class Worker:
                         await self.job_service.update_status(job.id, JobStatus.FAILED)
                         job.status = JobStatus.FAILED
                         break
+                finally:
+                    await self.job_service.add_retry_left(job.id)
