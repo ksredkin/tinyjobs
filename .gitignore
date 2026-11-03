@@ -2,3 +2,6 @@ __pycache__
 .vscode
 .ruff_cache
 .mypy_cache
+.pytest_cache
+.coverage
+*.db

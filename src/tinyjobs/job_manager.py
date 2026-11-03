@@ -24,7 +24,7 @@ class JobManager:
 
         loop = asyncio.get_running_loop()
         self._initialization_task = loop.create_task(self.database.init_db())
-        loop.create_task(self._start_workers())
+        self._startup_task = loop.create_task(self._start_workers())
 
     async def _enqueue_job(self, job: Job) -> None:
         self.jobs_by_id[job.id] = job
@@ -49,7 +49,7 @@ class JobManager:
         retries: int = 1,
         ctx_mode: bool = False,
     ) -> int:
-        await self._initialization_task
+        await self._startup_task
         job = await self.job_service.create(
             async_function, async_function_kwargs, retries, ctx_mode
         )
