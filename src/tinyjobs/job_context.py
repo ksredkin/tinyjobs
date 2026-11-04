@@ -21,19 +21,25 @@ class JobContext:
                 if not step:
                     step = await self.step_service.create(self.job_id, step_name)
 
-                if step.status not in [StepStatus.COMPLETED, StepStatus.FAILED]:
+                if step.status == StepStatus.COMPLETED:
+                    logger.debug(f"Данные шага {step_name} получены из базы.")
+                    return step.result
+                else:
                     await self.step_service.update_status(step.id, StepStatus.RUNNING)
 
-                    result = await func(*args, **kwargs)
+                    try:
+                        result = await func(*args, **kwargs)
+                    except Exception:
+                        await self.step_service.update_status(
+                            step.id, StepStatus.FAILED
+                        )
+                        raise
 
                     logger.debug(f"Данные получены путем выполнения шага {step_name}.")
                     await self.step_service.update_status(step.id, StepStatus.COMPLETED)
                     await self.step_service.update_result(step.id, result)
 
                     return result
-                else:
-                    logger.debug(f"Данные шага {step_name} получены из базы.")
-                    return step.result
 
             return wrapper
 

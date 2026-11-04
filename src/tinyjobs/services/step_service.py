@@ -13,7 +13,7 @@ class Step:
     job_id: int
     name: str
     status: StepStatus
-    result: Any | None
+    result: Any | None = None
 
 
 class StepService:
