@@ -17,25 +17,25 @@ class Worker:
     async def process_jobs(self, jobs: asyncio.Queue[Job]) -> None:
         while True:
             job = await jobs.get()
+            await self._process_job(job)
 
-            job.status = JobStatus.RUNNING
-            await self.job_service.update_status(job.id, JobStatus.RUNNING)
+    async def _process_job(self, job: Job) -> None:
+        job.status = JobStatus.RUNNING
+        await self.job_service.update_status(job.id, JobStatus.RUNNING)
 
-            for retrying in range(job.retries):
-                try:
-                    async_function_kwargs = {**job.async_function_kwargs}
-                    if job.ctx_mode:
-                        async_function_kwargs["ctx"] = JobContext(
-                            job.id, self.step_service
-                        )
-                    await job.async_function(**async_function_kwargs)
-                    job.status = JobStatus.COMPLETED
-                    await self.job_service.update_status(job.id, JobStatus.COMPLETED)
+        for retrying in range(job.retries):
+            try:
+                async_function_kwargs = {**job.async_function_kwargs}
+                if job.ctx_mode:
+                    async_function_kwargs["ctx"] = JobContext(job.id, self.step_service)
+                await job.async_function(**async_function_kwargs)
+                job.status = JobStatus.COMPLETED
+                await self.job_service.update_status(job.id, JobStatus.COMPLETED)
+                break
+            except Exception:  # noqa
+                if (retrying + 1) == job.retries:
+                    await self.job_service.update_status(job.id, JobStatus.FAILED)
+                    job.status = JobStatus.FAILED
                     break
-                except Exception:  # noqa
-                    if (retrying + 1) == job.retries:
-                        await self.job_service.update_status(job.id, JobStatus.FAILED)
-                        job.status = JobStatus.FAILED
-                        break
-                finally:
-                    await self.job_service.add_retry_left(job.id)
+            finally:
+                await self.job_service.add_retry_left(job.id)

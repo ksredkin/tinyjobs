@@ -1,10 +1,15 @@
-from src.tinyjobs.job_manager import JobManager
-import src.tinyjobs.job_manager as job_manager_module
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import AsyncMock, Mock
+
 import pytest
 
+import src.tinyjobs.job_manager as job_manager_module
+from src.tinyjobs.job_manager import JobManager
+
+
 @pytest.fixture
-def job_manager_dependencies(monkeypatch: pytest.MonkeyPatch) -> tuple[AsyncMock, AsyncMock, AsyncMock]:
+def job_manager_dependencies(
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[AsyncMock, AsyncMock, AsyncMock]:
     database = Mock()
     database.init_db = AsyncMock(return_value=None)
 
@@ -15,15 +20,20 @@ def job_manager_dependencies(monkeypatch: pytest.MonkeyPatch) -> tuple[AsyncMock
     step_service = Mock()
 
     monkeypatch.setattr(job_manager_module, "Database", Mock(return_value=database))
-    monkeypatch.setattr(job_manager_module, "JobService", Mock(return_value=job_service))
-    monkeypatch.setattr(job_manager_module, "StepService", Mock(return_value=step_service))
-    
+    monkeypatch.setattr(
+        job_manager_module, "JobService", Mock(return_value=job_service)
+    )
+    monkeypatch.setattr(
+        job_manager_module, "StepService", Mock(return_value=step_service)
+    )
+
     return database, job_service, step_service
+
 
 @pytest.mark.asyncio
 async def test_create_job_service(job_manager_dependencies) -> None:
     database, job_service, _ = job_manager_dependencies
-    
+
     manager = JobManager(workers=0)
     await manager._startup_task
 
@@ -58,7 +68,7 @@ async def test_add(job_manager_dependencies) -> None:
     job = Mock()
     job.id = 1
     job_service.create.return_value = job
-    
+
     manager = JobManager(workers=0)
     await manager._startup_task
 
@@ -69,9 +79,13 @@ async def test_add(job_manager_dependencies) -> None:
     async_function_kwargs = {"Hello": "World"}
     retries = 100
     ctx_mode = True
-    
-    added_job_id = await manager.add(async_function, async_function_kwargs, retries, ctx_mode)
-    job_service.create.assert_awaited_once_with(async_function, async_function_kwargs, retries, ctx_mode)
+
+    added_job_id = await manager.add(
+        async_function, async_function_kwargs, retries, ctx_mode
+    )
+    job_service.create.assert_awaited_once_with(
+        async_function, async_function_kwargs, retries, ctx_mode
+    )
     assert added_job_id == job.id
 
     assert manager.jobs_by_id[job.id] is job
@@ -85,13 +99,13 @@ async def test_get(job_manager_dependencies) -> None:
     job = Mock()
     job.id = 1
     job_service.create.return_value = job
-    
+
     manager = JobManager(workers=0)
     await manager._startup_task
 
     async def example():
         pass
-    
+
     added_job_id = await manager.add(
         async_function=example,
         async_function_kwargs={},
@@ -99,7 +113,7 @@ async def test_get(job_manager_dependencies) -> None:
         ctx_mode=False,
     )
 
-    assert await manager.get(0) is None 
+    assert await manager.get(0) is None
     assert await manager.get(added_job_id) is job
 
 
@@ -113,7 +127,7 @@ async def test_restoring_tasks(job_manager_dependencies) -> None:
 
     _enqueue_job = AsyncMock()
     setattr(JobManager, "_enqueue_job", _enqueue_job)
-    
+
     manager = JobManager(workers=0)
     await manager._startup_task
 
