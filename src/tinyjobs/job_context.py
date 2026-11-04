@@ -36,8 +36,7 @@ class JobContext:
                         raise
 
                     logger.debug(f"Данные получены путем выполнения шага {step_name}.")
-                    await self.step_service.update_status(step.id, StepStatus.COMPLETED)
-                    await self.step_service.update_result(step.id, result)
+                    await self.step_service.update_status_and_result(step.id, StepStatus.COMPLETED, result)
 
                     return result
 
