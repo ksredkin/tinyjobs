@@ -55,4 +55,5 @@ class JobRepository:
             return None
 
         job.retries_left += 1
+        await self.session.flush()
         return job
