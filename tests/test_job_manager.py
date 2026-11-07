@@ -13,7 +13,7 @@ def job_manager_dependencies(
     database = Mock()
     database.init_db = AsyncMock(return_value=None)
 
-    job_service = Mock()
+    job_service = AsyncMock()
     job_service.get_active = AsyncMock(return_value=[])
     job_service.create = AsyncMock()
 
@@ -99,6 +99,7 @@ async def test_get(job_manager_dependencies) -> None:
     job = Mock()
     job.id = 1
     job_service.create.return_value = job
+    job_service.get_by_id.return_value = None
 
     manager = JobManager(workers=0)
     await manager._startup_task
@@ -114,7 +115,15 @@ async def test_get(job_manager_dependencies) -> None:
     )
 
     assert await manager.get(0) is None
+
+    job_service.get_by_id.return_value = job
     assert await manager.get(added_job_id) is job
+
+    database_job = AsyncMock()
+    job.id = 2
+
+    job_service.get_by_id.return_value = database_job
+    assert await manager.get(database_job.id) is database_job
 
 
 @pytest.mark.asyncio

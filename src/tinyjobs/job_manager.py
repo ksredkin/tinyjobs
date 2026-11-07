@@ -57,4 +57,9 @@ class JobManager:
         return job.id
 
     async def get(self, job_id: int) -> Job | None:
-        return self.jobs_by_id.get(job_id)
+        job = self.jobs_by_id.get(job_id)
+
+        if not job:
+            job = await self.job_service.get_by_id(job_id)
+
+        return job

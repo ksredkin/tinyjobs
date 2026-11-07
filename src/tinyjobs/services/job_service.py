@@ -44,6 +44,24 @@ class JobService:
             for db_job in db_jobs
         ]
 
+    async def get_by_id(self, job_id: int) -> Job | None:
+        async with self.database.get_async_session() as session:
+            job_repo = JobRepository(session)
+            job_model = await job_repo.get_by_id(job_id)
+            return (
+                Job(
+                    job_model.id,
+                    self.find_function(job_model.func),
+                    job_model.func_kwargs,
+                    job_model.status,
+                    job_model.retries,
+                    job_model.retries_left,
+                    job_model.ctx_mode,
+                )
+                if job_model
+                else None
+            )
+
     async def create(
         self,
         func: Callable[..., Any],

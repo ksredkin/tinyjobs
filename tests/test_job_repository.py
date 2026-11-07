@@ -246,3 +246,45 @@ async def test_get_active(session_factory) -> None:
     assert active[0].retries_left == job.retries_left
     assert active[0].ctx_mode == ctx_mode
     assert active[0].status == job.status
+
+
+@pytest.mark.asyncio
+async def test_get_by_id(session_factory) -> None:
+    def test_func(name: str) -> None:
+        print(name)
+
+    func = f"{test_func.__module__}:{test_func.__name__}"
+    func_kwargs = {"name": "ksredkin"}
+    status = JobStatus.PENDING
+    retries = 1
+    retries_left = 0
+    ctx_mode = False
+
+    async with session_factory() as session:
+        session: AsyncSession  # type: ignore
+        job = Job(
+            func=func,
+            func_kwargs=func_kwargs,
+            status=status,
+            retries=retries,
+            retries_left=retries_left,
+            ctx_mode=ctx_mode,
+        )
+        session.add(job)
+        await session.commit()
+
+    async with session_factory() as session:
+        job_repo = JobRepository(session)
+        database_job = await job_repo.get_by_id(job.id)
+        fake_job = await job_repo.get_by_id(107)
+
+    assert fake_job is None
+
+    assert database_job
+    assert database_job.id == job.id
+    assert database_job.func == func
+    assert database_job.func_kwargs == func_kwargs
+    assert database_job.retries == retries
+    assert database_job.retries_left == job.retries_left
+    assert database_job.ctx_mode == ctx_mode
+    assert database_job.status == job.status

@@ -20,6 +20,10 @@ class JobRepository:
         )
         return [job for job in result.scalars().all()]
 
+    async def get_by_id(self, job_id: int) -> Job | None:
+        result = await self.session.execute(select(Job).where(Job.id == job_id))
+        return result.scalar_one_or_none()
+
     async def create(
         self, func: str, func_kwargs: dict[str, str | int], retries: int, ctx_mode: bool
     ) -> Job:
