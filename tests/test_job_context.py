@@ -31,7 +31,9 @@ async def test_step_withut_database_data() -> None:
     assert returned_value == value
     step_service.get_by_job_and_name.assert_awaited_with(job.id, step_name)
     step_service.create.assert_awaited_with(job.id, step_name)
-    step_service.update_status_and_result.assert_awaited_with(step.id, StepStatus.COMPLETED, returned_value)
+    step_service.update_status_and_result.assert_awaited_with(
+        step.id, StepStatus.COMPLETED, returned_value
+    )
 
 
 @pytest.mark.asyncio
