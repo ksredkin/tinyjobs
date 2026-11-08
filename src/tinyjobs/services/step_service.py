@@ -54,7 +54,9 @@ class StepService:
         async with self.database.get_async_session() as session:
             step_repo = StepRepository(session)
             await step_repo.update_step(
-                step_id=step_id, new_status=new_status, new_result=new_result
+                step_id=step_id,
+                new_status=new_status,
+                new_result=json.dumps(new_result),
             )
 
     async def update_status(self, step_id: int, new_status: StepStatus) -> None:
