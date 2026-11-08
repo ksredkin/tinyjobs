@@ -45,7 +45,6 @@ async def my_task(ctx: JobContext) -> None:
             print(user)
 
     users = await get_users()
-    print("еще жив")
     await print_users(users)
 
 

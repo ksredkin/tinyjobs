@@ -1,7 +1,8 @@
 [project]
-name = "tinyjobs"
-version = "0.1.0"
-description = ""
+name = "tinyjobs-ksredkin"
+version = "1.0.0"
+description = "Асинхронное выполнение фоновых задач с сохранением состояния"
+readme = "README.md"
 authors = [
     {name = "ksredkin",email = "ksredkin0968@gmail.com"}
 ]
@@ -11,6 +12,9 @@ dependencies = [
     "aiosqlite (>=0.20.0,<1.0.0)",
 ]
 
+
+[tool.poetry]
+packages = [{include = "tinyjobs", from = "src"}] 
 
 [tool.ruff]
 line-length = 88
